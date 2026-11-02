@@ -1,0 +1,16 @@
+{
+  "name": "status-tajam",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Webapp statik untuk sediakan video & gambar Status WhatsApp (ffmpeg.wasm, tiada server).",
+  "scripts": {
+    "serve": "node scripts/serve.mjs",
+    "fixtures": "bash tests/make-fixtures.sh",
+    "test": "node tests/e2e.mjs",
+    "vendor-core": "node scripts/vendor-core.mjs"
+  },
+  "devDependencies": {
+    "@ffmpeg/core": "0.12.10"
+  }
+}

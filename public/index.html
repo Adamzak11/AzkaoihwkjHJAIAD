@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Status Tajam</title>
+  <meta name="description" content="Sediakan video dan gambar supaya kekal tajam bila dipost ke Status WhatsApp. Semua diproses dalam browser, tiada fail diupload.">
+  <meta name="theme-color" content="#0f766e">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f766e'/%3E%3Cpath d='M12 9l12 7-12 7z' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <h1>Status Tajam</h1>
+    <p>Sediakan video &amp; gambar supaya lebih tajam di Status WhatsApp. <strong>Semua diproses dalam peranti anda</strong> — tiada fail diupload ke mana-mana server.</p>
+  </header>
+
+  <main>
+    <noscript><p class="warn">Aplikasi ini memerlukan JavaScript.</p></noscript>
+    <p id="compat" class="warn" hidden></p>
+
+    <!-- 1. Pilih fail -->
+    <section class="card">
+      <h2><span class="step">1</span> Pilih fail</h2>
+      <label class="btn primary block file-btn">
+        <input id="fileInput" type="file" accept="video/*,image/*" multiple>
+        ＋ Pilih video / gambar
+      </label>
+      <p class="hint">Boleh pilih lebih dari satu. Enjin video (~32 MB) dimuat turun hanya bila anda pilih video, dan disimpan dalam cache browser.</p>
+      <ul id="fileList" class="file-list"></ul>
+    </section>
+
+    <!-- Status enjin -->
+    <section id="engineBox" class="card engine" hidden>
+      <div class="row between"><strong id="engineLabel">Memuat enjin video…</strong><span id="enginePct">0%</span></div>
+      <div class="bar"><div id="engineBar"></div></div>
+    </section>
+
+    <!-- 2. Tetapan -->
+    <section class="card">
+      <h2><span class="step">2</span> Tetapan</h2>
+
+      <fieldset>
+        <legend>Profil kualiti</legend>
+        <div class="seg" role="radiogroup" id="profileGroup">
+          <label><input type="radio" name="profile" value="ringan"><span>Ringan</span></label>
+          <label><input type="radio" name="profile" value="seimbang" checked><span>Seimbang</span></label>
+          <label><input type="radio" name="profile" value="tajam"><span>Tajam</span></label>
+        </div>
+        <p id="profileDesc" class="hint"></p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Kadar bingkai (FPS)</legend>
+        <div class="seg" role="radiogroup" id="fpsGroup">
+          <label><input type="radio" name="fps" value="asal"><span>Asal (kekalkan)</span></label>
+          <label><input type="radio" name="fps" value="30" checked><span>30fps</span></label>
+          <label><input type="radio" name="fps" value="60"><span>60fps</span></label>
+        </div>
+        <p id="fpsNote" class="hint">60fps hanya tersedia jika video sumber memang 60fps (dibaca dengan ffprobe). FPS tidak akan dinaikkan — itu hanya menggandakan frame.</p>
+        <p id="fps60Warn" class="warn small" hidden></p>
+      </fieldset>
+
+      <label class="check">
+        <input type="checkbox" id="segmentChk">
+        <span>Potong video lebih 30 saat kepada bahagian 30 saat <small>(bernombor ikut turutan: _bahagian-01, _bahagian-02 …)</small></span>
+      </label>
+
+      <details class="adv">
+        <summary>Lanjutan</summary>
+        <label class="field">Kelajuan encode (preset x264)
+          <select id="presetSel">
+            <option value="veryfast" selected>Pantas — veryfast (disyorkan untuk telefon)</option>
+            <option value="faster">Sederhana — faster</option>
+            <option value="medium">Perlahan — medium (fail lebih kecil pada kualiti sama)</option>
+          </select>
+        </label>
+        <p class="hint">Semua output: H.264 (High), yuv420p, AAC 128k stereo, +faststart, maksimum 1080×1920 (landskap 1920×1080), tidak dibesarkan. Gambar: JPEG, kualiti ikut profil.</p>
+        <p class="hint" id="deviceInfo"></p>
+      </details>
+    </section>
+
+    <!-- Mod A/B -->
+    <section class="card">
+      <label class="switch">
+        <input type="checkbox" id="abToggle">
+        <span class="slider"></span>
+        <span><strong>Mod ujian A/B</strong><br><small>Hasilkan beberapa versi satu video untuk dibandingkan di Status.</small></span>
+      </label>
+      <div id="abPanel" hidden>
+        <label class="field">Video untuk diuji
+          <select id="abFile"></select>
+        </label>
+        <fieldset>
+          <legend>Profil</legend>
+          <div class="chips">
+            <label><input type="checkbox" name="abProfile" value="ringan"><span>Ringan</span></label>
+            <label><input type="checkbox" name="abProfile" value="seimbang" checked><span>Seimbang</span></label>
+            <label><input type="checkbox" name="abProfile" value="tajam" checked><span>Tajam</span></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>FPS</legend>
+          <div class="chips">
+            <label><input type="checkbox" name="abFps" value="30" checked><span>30fps</span></label>
+            <label><input type="checkbox" name="abFps" value="60" id="abFps60"><span>60fps</span></label>
+            <label><input type="checkbox" name="abFps" value="asal"><span>Asal</span></label>
+          </div>
+        </fieldset>
+        <label class="field">Panjang ujian
+          <select id="abLength">
+            <option value="10">10 saat pertama</option>
+            <option value="15" selected>15 saat pertama (disyorkan)</option>
+            <option value="30">30 saat pertama</option>
+            <option value="0">Penuh</option>
+          </select>
+        </label>
+        <p id="abSummary" class="hint"></p>
+      </div>
+    </section>
+
+    <!-- 3. Proses -->
+    <section class="card">
+      <h2><span class="step">3</span> Proses</h2>
+      <button id="processBtn" class="btn primary block" disabled>Proses</button>
+      <div id="progressBox" hidden>
+        <div class="row between small"><span id="jobLabel">…</span><span id="jobPct"></span></div>
+        <div class="bar"><div id="jobBar"></div></div>
+        <div class="row between small muted"><span id="overallLabel"></span><span id="etaLabel"></span></div>
+        <button id="cancelBtn" class="btn ghost small">Batal</button>
+      </div>
+      <div id="messages"></div>
+    </section>
+
+    <!-- Hasil -->
+    <section id="resultsCard" class="card" hidden>
+      <div class="row between">
+        <h2>Hasil</h2>
+        <button id="clearBtn" class="btn ghost small">Kosongkan</button>
+      </div>
+      <div id="abTableWrap" hidden>
+        <h3>Perbandingan A/B</h3>
+        <div class="table-scroll"><table id="abTable">
+          <thead><tr><th>Label</th><th>Saiz</th><th>Resolusi</th><th>Bitrate</th><th>FPS sebenar</th><th>Masa proses</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <p class="hint">Tip: post setiap versi ke Status dengan label sebagai kapsyen (cth. "B: Tajam 60fps"), kemudian bandingkan di telefon lain.</p>
+      </div>
+      <div id="results" class="results"></div>
+    </section>
+
+    <!-- Bantuan -->
+    <section class="card help">
+      <h2>Cara post ke Status</h2>
+      <ol>
+        <li>Tekan <strong>Kongsi</strong> pada hasil, pilih <strong>WhatsApp</strong> → <strong>Status Saya</strong>.</li>
+        <li>Jika butang Kongsi tiada / tidak berfungsi, tekan <strong>Muat turun</strong>, kemudian:
+          <ul>
+            <li><strong>Simpan ke galeri</strong> (iPhone: dalam app Files, tekan fail → Kongsi → <em>Save Video</em>), lalu post dari galeri; <strong>atau</strong></li>
+            <li>Hantar ke <strong>chat sendiri</strong> (Message yourself) dalam mod HD: <em>Settings › Storage and data › Media upload quality › HD</em>, kemudian <strong>forward</strong> ke Status.</li>
+          </ul>
+        </li>
+        <li>Untuk video yang dipotong, post ikut nombor bahagian: 01, 02, 03…</li>
+      </ol>
+      <div class="note">
+        <strong>Nota jujur:</strong> Aplikasi ini <em>tidak</em> post terus ke Status — WhatsApp tidak menyediakan API untuk itu. Ia juga <em>tidak menjamin</em> kualiti: WhatsApp boleh memampat semula video/gambar, dan server mungkin menurunkan fps atau bitrate. Hasil bergantung pada versi/kemas kini WhatsApp, jadi <strong>buat ujian A/B</strong> untuk tahu tetapan terbaik bagi telefon anda.
+      </div>
+      <p class="hint">iPhone: jika resolusi video yang dipaparkan dalam senarai lebih rendah dari asal, iOS mungkin telah memampatnya semasa dipilih. Cuba simpan video ke app Files dahulu dan pilih dari situ.</p>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>Diproses dengan ffmpeg.wasm <span id="verInfo"></span> (single-thread) dalam browser. Fail anda tidak meninggalkan peranti ini.</p>
+  </footer>
+
+  <dialog id="confirmDlg">
+    <form method="dialog">
+      <h3 id="dlgTitle">Amaran</h3>
+      <div id="dlgBody"></div>
+      <div class="row end gap">
+        <button value="cancel" class="btn ghost">Batal</button>
+        <button value="ok" class="btn primary" id="dlgOk">Teruskan</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>
